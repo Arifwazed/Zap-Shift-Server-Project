@@ -151,7 +151,7 @@ async function run() {
         res.send(result)
     })
     
-    //// parecel API //////
+    ///// parecel API //////
     app.post('/parcels',async(req,res)=> {
         const parcel = req.body;
         const trackingId = generateTrackingId();
@@ -220,6 +220,27 @@ async function run() {
         const result = await parcelCollection.findOne(query);
         res.send(result)
     })
+
+    // pipeline 
+    app.get('/parcels/delivery-status/stats', async(req,res) => {
+        const pipeline = [
+            {
+                $group: {
+                    _id: '$deliveryStatus',
+                    count: { $sum: 1}
+                }
+            },
+            {
+                $project: {
+                    status: '$_id',
+                    count: 1
+                }
+            }
+        ]
+        const result = await parcelCollection.aggregate(pipeline).toArray();
+        res.send(result)
+    })
+
     // have to chnage the url like /parcel/:id/assign
     app.patch('/parcel/:id',async(req,res) => {
         // update parcel information
@@ -409,6 +430,21 @@ async function run() {
         res.send(result)
     })
 
+    // pipeline
+    app.get('/riders/delivery-per-day',async(req,res)=> {
+        const email = req.query.email;
+
+        const pipeline = [
+            {
+                $match: {
+                    riderEmail: email
+                }
+            }
+        ]
+        const result = await parcelCollection.aggregate(pipeline).toArray()
+        res.send(result)
+    })
+
     app.patch('/riders/:id',verifyFBToken,verifyAdmin,async (req,res) => {
         const status = req.body.status;
         const id = req.params.id;
@@ -434,7 +470,7 @@ async function run() {
         res.send(result)
     })
 
-    ////// Tracking related ApI
+    ////// Tracking related ApI ////////
     app.get('/trackings/:trackingId/logs',async(req,res) => {
         const trackingId =  req.params.trackingId;
         const query = {trackingId};
