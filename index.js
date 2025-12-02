@@ -437,7 +437,42 @@ async function run() {
         const pipeline = [
             {
                 $match: {
-                    riderEmail: email
+                    riderEmail: email,
+                    deliveryStatus: 'parcel_delivered'
+                }
+            },
+            {
+                $lookup: {
+                    from: 'trackings',
+                    localField: 'trackingId',
+                    foreignField: 'trackingId',
+                    as: 'parcel_trackings'
+                }
+            },
+            {
+                $unwind: "$parcel_trackings"
+            },
+            {
+                $match: {
+                    "parcel_trackings.status" : "parcel_delivered"
+                }
+            },
+            {
+                // convert timestamp to YYYY-MM-DD string
+                $addFields: {
+                    deliveryDay: {
+                        $dateToString: {
+                            format: "%Y-%m-%d",
+                            date: "$parcel_trackings.createdAt"
+                        }
+                    }
+                }
+            },
+            {
+                // group by date
+                $group: {
+                    _id: "$deliveryDay",
+                    deliveredCount: {$sum: 1}
                 }
             }
         ]
@@ -479,8 +514,8 @@ async function run() {
     })
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    // await client.db("admin").command({ ping: 1 });
+    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
