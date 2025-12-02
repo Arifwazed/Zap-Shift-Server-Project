@@ -158,6 +158,7 @@ async function run() {
         // adding the date when data add
         parcel.createdAt = new Date(); 
         parcel.trackingId = trackingId;
+        parcel.deliveryStatus = 'parcel_created'
         const result = await parcelCollection.insertOne(parcel);
         logTracking(trackingId,'parcel_created')
         res.send(result)
@@ -358,7 +359,7 @@ async function run() {
             const update = {
                 $set: {
                     paymentStatus: 'paid',
-                    deliveryStatus: 'pending-pickup',
+                    deliveryStatus: 'pending_pickup',
                     // trackingId : trackingId
                 }
             }
